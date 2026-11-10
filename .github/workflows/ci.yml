@@ -118,7 +118,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Trivy scan — backend image
-        uses: aquasecurity/trivy-action@0.29.0
+        uses: aquasecurity/trivy-action@0.28.0
         with:
           image-ref: estateflow-backend:ci
           format: table
