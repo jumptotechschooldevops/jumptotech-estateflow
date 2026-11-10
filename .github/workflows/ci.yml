@@ -104,7 +104,7 @@ jobs:
         with:
           context: ./backend
           push: false
-          tags: estateflow-backend:ci
+          tags: estateflow-backend:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -113,14 +113,14 @@ jobs:
         with:
           context: ./frontend
           push: false
-          tags: estateflow-frontend:ci
+          tags: estateflow-frontend:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Trivy scan — backend image
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: estateflow-backend:ci
+          image-ref: jumptotech-estateflow-backend:latest
           format: table
           severity: CRITICAL,HIGH
           exit-code: '1'
@@ -128,7 +128,7 @@ jobs:
       - name: Trivy scan — frontend image
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: estateflow-frontend:ci
+          image-ref: jumptotech-estateflow-frontend:latest
           format: table
           severity: CRITICAL,HIGH
           exit-code: '1'
