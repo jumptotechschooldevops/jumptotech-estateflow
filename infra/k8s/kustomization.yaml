@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: estateflow-staging
+resources:
+  - 00-namespace.yaml
+  - 01-configmap.yaml
+  # 02-secrets.example.yaml is intentionally NOT listed here — create the real Secret
+  # separately (see README.md) rather than applying example/placeholder values.
+  - 03-postgres.yaml
+  - 04-redis.yaml
+  - 05-backend.yaml
+  - 06-frontend.yaml
+  - 07-ingress.yaml
+  - 08-hpa.yaml

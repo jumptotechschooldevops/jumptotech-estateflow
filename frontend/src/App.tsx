@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { fetchProperties, createProperty, deleteProperty, type Property, type NewProperty } from './api';
 import { PropertyList } from './components/PropertyList';
 import { PropertyForm } from './components/PropertyForm';
+import { AdminTokenInput } from './components/AdminTokenInput';
 
 export function App() {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -35,8 +36,9 @@ export function App() {
     <main>
       <h1>EstateFlow</h1>
       {error && <p role="alert">{error}</p>}
+      <AdminTokenInput />
       <PropertyForm onCreate={handleCreate} />
-      <PropertyList properties={properties} onDelete={handleDelete} />
+      <PropertyList properties={properties} onDelete={handleDelete} onImagesChanged={load} />
     </main>
   );
 }

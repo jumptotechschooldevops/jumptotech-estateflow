@@ -1,0 +1,126 @@
+# Builds and pushes the backend/frontend images to ECR, then rolls out the new tag on the
+# existing `eks-node` cluster (namespace `estateflow-staging`). Authenticates to AWS via GitHub
+# OIDC — no long-lived AWS credentials are stored in this repo. No AWS account ID or ARN is
+# hardcoded: `vars.AWS_DEPLOY_ROLE_ARN` and `vars.ECR_REGISTRY` must be set as repository (or
+# environment) variables before this workflow can run — see
+# docs/02-deployment-guides/12-github-actions-cicd.md.
+name: Deploy to EKS
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  EKS_CLUSTER_NAME: eks-node
+  K8S_NAMESPACE: estateflow-staging
+  BACKEND_IMAGE: estateflow-backend
+  FRONTEND_IMAGE: estateflow-frontend
+
+jobs:
+  build-and-push:
+    name: Build, scan, and push images to ECR
+    runs-on: ubuntu-latest
+    environment: staging
+    outputs:
+      image-tag: ${{ steps.tag.outputs.value }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compute image tag
+        id: tag
+        run: echo "value=${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: true
+          load: true
+          tags: |
+            ${{ vars.ECR_REGISTRY }}/${{ env.BACKEND_IMAGE }}:${{ steps.tag.outputs.value }}
+            ${{ vars.ECR_REGISTRY }}/${{ env.BACKEND_IMAGE }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: true
+          load: true
+          tags: |
+            ${{ vars.ECR_REGISTRY }}/${{ env.FRONTEND_IMAGE }}:${{ steps.tag.outputs.value }}
+            ${{ vars.ECR_REGISTRY }}/${{ env.FRONTEND_IMAGE }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Trivy scan — backend image (fail on CRITICAL/HIGH)
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ vars.ECR_REGISTRY }}/${{ env.BACKEND_IMAGE }}:${{ steps.tag.outputs.value }}
+          format: table
+          severity: CRITICAL,HIGH
+          exit-code: '1'
+
+      - name: Trivy scan — frontend image (fail on CRITICAL/HIGH)
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ vars.ECR_REGISTRY }}/${{ env.FRONTEND_IMAGE }}:${{ steps.tag.outputs.value }}
+          format: table
+          severity: CRITICAL,HIGH
+          exit-code: '1'
+
+  deploy:
+    name: Roll out to EKS
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update kubeconfig for eks-node
+        run: aws eks update-kubeconfig --name "$EKS_CLUSTER_NAME" --region "$AWS_REGION"
+
+      - name: Set new image tags
+        run: |
+          kubectl set image deployment/backend \
+            backend=${{ vars.ECR_REGISTRY }}/${{ env.BACKEND_IMAGE }}:${{ needs.build-and-push.outputs.image-tag }} \
+            -n "$K8S_NAMESPACE"
+          kubectl set image deployment/frontend \
+            frontend=${{ vars.ECR_REGISTRY }}/${{ env.FRONTEND_IMAGE }}:${{ needs.build-and-push.outputs.image-tag }} \
+            -n "$K8S_NAMESPACE"
+
+      - name: Verify rollout
+        run: |
+          kubectl rollout status deployment/backend -n "$K8S_NAMESPACE" --timeout=180s
+          kubectl rollout status deployment/frontend -n "$K8S_NAMESPACE" --timeout=180s
+
+      - name: Smoke-test backend health endpoint
+        run: |
+          kubectl run estateflow-smoke-test --rm -i --restart=Never \
+            -n "$K8S_NAMESPACE" --image=curlimages/curl:8.11.0 -- \
+            curl -sf http://backend:5000/api/health
