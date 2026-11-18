@@ -31,6 +31,7 @@ explained) → **Expected results** → **Verify** → **Common errors** → **R
 | 14 | [Scaling and rolling updates](14-scaling-and-rolling-updates.md) | Handling load, deploying new versions safely |
 | 15 | [Rollback and recovery](15-rollback-and-recovery.md) | Undoing a bad deploy |
 | 16 | [Safe resource cleanup](16-safe-resource-cleanup.md) | Tearing down without breaking other things |
+| 17 | [NetworkPolicy enforcement](17-networkpolicy-enforcement.md) | Locking down pod-to-pod traffic, and checking whether your cluster actually enforces it |
 
 ## Progress checklist
 
@@ -50,3 +51,4 @@ explained) → **Expected results** → **Verify** → **Common errors** → **R
 - [ ] 14 Scaling and rolling updates
 - [ ] 15 Rollback and recovery
 - [ ] 16 Safe resource cleanup
+- [ ] 17 NetworkPolicy enforcement

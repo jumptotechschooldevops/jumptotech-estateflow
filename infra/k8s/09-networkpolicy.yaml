@@ -1,0 +1,157 @@
+# NetworkPolicy objects for estateflow-staging — least-privilege pod-to-pod traffic.
+#
+# IMPORTANT, read before relying on this: the default AWS VPC CNI on EKS does NOT enforce
+# NetworkPolicy out of the box. These objects are valid, correct Kubernetes resources and are
+# safe to apply, but they are only actually enforced if the cluster has a NetworkPolicy-
+# capable CNI/add-on installed (e.g. the Amazon VPC CNI's native NetworkPolicy support,
+# enabled via `aws eks` add-on configuration, or a separate CNI like Calico). Confirm which
+# is true for `eks-node` before assuming these are doing anything — see
+# docs/02-deployment-guides/17-networkpolicy-enforcement.md. Applying them on a cluster
+# without enforcement is harmless (the objects just sit there unused), so there's no risk in
+# applying them ahead of confirming enforcement, but don't treat their presence as proof of
+# actual network segmentation until you've verified enforcement is on.
+#
+# Model: default-deny everything in the namespace, then explicitly allow only the traffic
+# paths the application actually needs (verified against infra/k8s/03..07 and the real
+# ports/selectors used there).
+
+# 1. Baseline: nothing is allowed in or out unless a more specific policy below allows it.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: estateflow-staging
+spec:
+  podSelector: {}
+  policyTypes: ["Ingress", "Egress"]
+---
+# 2. Every pod needs to resolve DNS (Service names like "postgres", "redis", plus AWS API
+#    hostnames for the backend's S3 calls) — kube-dns/CoreDNS lives in kube-system.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-egress
+  namespace: estateflow-staging
+spec:
+  podSelector: {}
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+---
+# 3. The ALB (target-type: ip, per infra/k8s/07-ingress.yaml) connects directly to frontend
+#    pod IPs on 8080 and backend pod IPs on 5000 — it is not itself a pod we can select, so
+#    this allows ingress on those specific ports from any source. Least-privilege still
+#    applies: only those two ports are open, nothing else.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-frontend
+  namespace: estateflow-staging
+spec:
+  podSelector:
+    matchLabels:
+      app: frontend
+  policyTypes: ["Ingress"]
+  ingress:
+    - ports:
+        - protocol: TCP
+          port: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-backend
+  namespace: estateflow-staging
+spec:
+  podSelector:
+    matchLabels:
+      app: backend
+  policyTypes: ["Ingress"]
+  ingress:
+    - ports:
+        - protocol: TCP
+          port: 5000
+---
+# 4. Only the backend may talk to Postgres (port 5432) and Redis (port 6379) — matches
+#    infra/k8s/03-postgres.yaml and 04-redis.yaml's actual container ports/selectors exactly.
+#    Nothing else in the namespace (including the frontend) has any reason to reach either.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-backend-to-postgres
+  namespace: estateflow-staging
+spec:
+  podSelector:
+    matchLabels:
+      app: postgres
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: backend
+      ports:
+        - protocol: TCP
+          port: 5432
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-backend-to-redis
+  namespace: estateflow-staging
+spec:
+  podSelector:
+    matchLabels:
+      app: redis
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: backend
+      ports:
+        - protocol: TCP
+          port: 6379
+---
+# 5. The backend also needs outbound HTTPS: to Postgres/Redis (covered above), and to AWS
+#    APIs (S3 for image storage, STS for IRSA credential exchange — see
+#    backend/src/awsClients.js and docs/02-deployment-guides/10-iam-oidc-and-irsa.md). AWS API
+#    endpoints aren't pods, so this is scoped by port (443) rather than by pod/namespace
+#    selector — restricting egress to specific AWS IP ranges would require keeping a CIDR
+#    list in sync with AWS's published ranges, which is more operational burden than this
+#    lab's threat model justifies. Document this trade-off rather than silently widening
+#    scope without comment.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-backend-egress-to-dependencies
+  namespace: estateflow-staging
+spec:
+  podSelector:
+    matchLabels:
+      app: backend
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+    - to:
+        - podSelector:
+            matchLabels:
+              app: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    - ports:
+        - protocol: TCP
+          port: 443

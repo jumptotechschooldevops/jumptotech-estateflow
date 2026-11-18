@@ -12,3 +12,4 @@ resources:
   - 06-frontend.yaml
   - 07-ingress.yaml
   - 08-hpa.yaml
+  - 09-networkpolicy.yaml
