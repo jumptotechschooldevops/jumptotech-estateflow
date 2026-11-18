@@ -31,6 +31,10 @@ explained) → **Expected results** → **Verify** → **Common errors** → **R
 | 14 | [Scaling and rolling updates](14-scaling-and-rolling-updates.md) | Handling load, deploying new versions safely |
 | 15 | [Rollback and recovery](15-rollback-and-recovery.md) | Undoing a bad deploy |
 | 16 | [Safe resource cleanup](16-safe-resource-cleanup.md) | Tearing down without breaking other things |
+| 17 | [CI vs. CD](17-ci-vs-cd.md) | Why these are two different jobs with two different risk levels |
+| 18 | [GitHub OIDC authentication](18-github-oidc-authentication.md) | How token-based AWS auth replaces long-lived keys |
+| 19 | [Deployment approvals](19-deployment-approvals.md) | The `staging` environment's required-reviewer gate |
+| 20 | [Troubleshooting failed AWS authentication](20-troubleshooting-aws-auth-failures.md) | Diagnosing auth failures, with a real example from this project |
 
 ## Progress checklist
 
@@ -50,3 +54,7 @@ explained) → **Expected results** → **Verify** → **Common errors** → **R
 - [ ] 14 Scaling and rolling updates
 - [ ] 15 Rollback and recovery
 - [ ] 16 Safe resource cleanup
+- [ ] 17 CI vs. CD
+- [ ] 18 GitHub OIDC authentication
+- [ ] 19 Deployment approvals
+- [ ] 20 Troubleshooting failed AWS authentication
