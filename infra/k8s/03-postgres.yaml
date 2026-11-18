@@ -28,6 +28,9 @@ data:
         ('Lakeside Cottage', 'Cozy cottage with private lake access.', 275000, '7 Lake Shore Rd', 2, 2)
     ON CONFLICT DO NOTHING;
   002_add_property_images.sql: |
+    -- Additive migration: adds image metadata storage for properties.
+    -- Safe to run on an existing database — only creates new objects, never
+    -- modifies or deletes existing rows in `properties`.
     CREATE TABLE IF NOT EXISTS property_images (
         id SERIAL PRIMARY KEY,
         property_id INTEGER NOT NULL REFERENCES properties(id) ON DELETE CASCADE,

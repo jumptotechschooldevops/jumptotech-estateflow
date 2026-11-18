@@ -4,9 +4,12 @@
 
 ## Scenario
 
-> *Labeled training exercise, lab environment only.* Note: this project's manifests don't
-> ship a `NetworkPolicy` by default — this exercise introduces one deliberately, the way a
-> real hardening change might.
+> *Labeled training exercise, lab environment only.* Note: this project's manifests now ship
+> 6 real `NetworkPolicy` objects (`infra/k8s/09-networkpolicy.yaml`) — whether they're
+> actually *enforced* depends on your cluster's CNI (see
+> [02-deployment-guides/17](../../02-deployment-guides/17-networkpolicy-enforcement.md)).
+> This exercise introduces an *additional*, deliberately broken policy on top of the real
+> ones, the way a real hardening change gone wrong might.
 
 `/api/health` reports `db: down`. DNS resolution for `postgres` works fine. Something else is
 blocking the connection.
