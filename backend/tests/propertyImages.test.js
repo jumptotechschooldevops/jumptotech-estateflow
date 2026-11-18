@@ -2,6 +2,14 @@ const request = require('supertest');
 const { mockClient } = require('aws-sdk-client-mock');
 const { PutObjectCommand, DeleteObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
 
+// getSignedUrl() signs requests directly from the client's resolved credentials — it never
+// calls client.send(), so mocking the S3 client alone (below) doesn't cover it. Without this,
+// generating a presigned URL in a test tries to resolve real AWS credentials and fails with
+// CredentialsProviderError anywhere those aren't configured (e.g. a clean CI runner).
+jest.mock('@aws-sdk/s3-request-presigner', () => ({
+  getSignedUrl: jest.fn().mockResolvedValue('https://example-bucket.s3.amazonaws.com/mock-presigned-url'),
+}));
+
 process.env.ADMIN_API_TOKEN = 'test-admin-token';
 process.env.S3_BUCKET_NAME = 'estateflow-test-bucket';
 
