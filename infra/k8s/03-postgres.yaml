@@ -1,0 +1,135 @@
+# PostgreSQL for property + image metadata, backed by an EBS-provisioned PVC.
+# Assumes the Amazon EBS CSI driver add-on is installed on the `eks-node` cluster and a
+# `gp3` StorageClass exists (see docs/02-deployment-guides/06-postgresql-pvc-and-ebs.md).
+# Adjust storageClassName below if your cluster uses a different name (commonly "gp2" on
+# older clusters).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: estateflow-db-init
+  namespace: estateflow-staging
+data:
+  001_init.sql: |
+    CREATE TABLE IF NOT EXISTS properties (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        price NUMERIC(12, 2) NOT NULL,
+        address VARCHAR(255),
+        bedrooms SMALLINT,
+        bathrooms SMALLINT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+
+    INSERT INTO properties (title, description, price, address, bedrooms, bathrooms)
+    VALUES
+        ('Downtown Loft', 'Bright open-plan loft near the city center.', 325000, '12 Market St', 2, 1),
+        ('Suburban Family Home', 'Spacious 4-bed house with a large backyard.', 450000, '48 Maple Ave', 4, 3),
+        ('Lakeside Cottage', 'Cozy cottage with private lake access.', 275000, '7 Lake Shore Rd', 2, 2)
+    ON CONFLICT DO NOTHING;
+  002_add_property_images.sql: |
+    CREATE TABLE IF NOT EXISTS property_images (
+        id SERIAL PRIMARY KEY,
+        property_id INTEGER NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
+        object_key VARCHAR(512) NOT NULL UNIQUE,
+        content_type VARCHAR(100) NOT NULL,
+        size_bytes INTEGER NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_property_images_property_id ON property_images(property_id);
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: estateflow-staging
+spec:
+  clusterIP: None
+  selector:
+    app: postgres
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: estateflow-staging
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      securityContext:
+        fsGroup: 999
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 999
+            allowPrivilegeEscalation: false
+          ports:
+            - containerPort: 5432
+          env:
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: estateflow-config
+                  key: PGDATABASE
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: estateflow-secrets
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: estateflow-secrets
+                  key: POSTGRES_PASSWORD
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            - name: init-scripts
+              mountPath: /docker-entrypoint-initdb.d
+              readOnly: true
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "$(POSTGRES_USER)"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "$(POSTGRES_USER)"]
+            initialDelaySeconds: 15
+            periodSeconds: 20
+      volumes:
+        - name: init-scripts
+          configMap:
+            name: estateflow-db-init
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: gp3
+        resources:
+          requests:
+            storage: 10Gi

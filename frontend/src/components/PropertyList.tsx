@@ -1,11 +1,13 @@
 import type { Property } from '../api';
+import { PropertyImages } from './PropertyImages';
 
 interface PropertyListProps {
   properties: Property[];
   onDelete: (id: number) => void;
+  onImagesChanged: () => void;
 }
 
-export function PropertyList({ properties, onDelete }: PropertyListProps) {
+export function PropertyList({ properties, onDelete, onImagesChanged }: PropertyListProps) {
   if (properties.length === 0) {
     return <p data-testid="empty-state">No properties yet.</p>;
   }
@@ -19,6 +21,11 @@ export function PropertyList({ properties, onDelete }: PropertyListProps) {
           <button type="button" onClick={() => onDelete(property.id)}>
             Delete
           </button>
+          <PropertyImages
+            propertyId={property.id}
+            images={property.images ?? []}
+            onChange={onImagesChanged}
+          />
         </li>
       ))}
     </ul>

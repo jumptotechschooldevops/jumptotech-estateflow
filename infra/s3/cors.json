@@ -1,0 +1,10 @@
+{
+  "CORSRules": [
+    {
+      "AllowedMethods": ["GET"],
+      "AllowedOrigins": ["https://<YOUR_ALB_DNS_NAME_OR_DOMAIN>"],
+      "AllowedHeaders": ["*"],
+      "MaxAgeSeconds": 3000
+    }
+  ]
+}

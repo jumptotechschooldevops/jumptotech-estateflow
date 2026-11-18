@@ -1,0 +1,19 @@
+# CODEOWNERS — PLACEHOLDER. Replace every @example-username below with your actual team's
+# GitHub usernames/teams before relying on this to enforce required reviewers.
+# See docs/07-change-management/02-code-review-ci-and-approvals.md for how this is used.
+
+# Default owners for everything not matched below
+*                           @example-org/estateflow-maintainers
+
+# Backend application code
+/backend/                  @example-username-backend-lead
+
+# Frontend application code
+/frontend/                 @example-username-frontend-lead
+
+# Infrastructure — require platform/SRE review for anything here
+/infra/                    @example-username-platform-lead
+/.github/workflows/        @example-username-platform-lead
+
+# Documentation can be reviewed more broadly
+/docs/                     @example-org/estateflow-maintainers

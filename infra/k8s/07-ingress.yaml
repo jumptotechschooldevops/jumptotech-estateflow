@@ -1,0 +1,70 @@
+# Requires the AWS Load Balancer Controller already installed on the cluster (per
+# docs/02-deployment-guides/08-aws-load-balancer-controller.md). Creates ONE internet-facing ALB (both Ingress
+# objects share the same `group.name`, which is how the controller merges them into a single
+# load balancer) with IP target type, routing "/api" to the backend and "/" to the frontend.
+#
+# Two Ingress objects — not one with two paths — because each backend needs its OWN health
+# check path/target group: the backend only answers 200 on /api/health, the frontend only on /.
+# `group.order` sets listener-rule priority so /api is evaluated before the frontend's
+# catch-all "/".
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: estateflow-backend
+  namespace: estateflow-staging
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+    alb.ingress.kubernetes.io/group.name: estateflow
+    alb.ingress.kubernetes.io/group.order: "10"
+    alb.ingress.kubernetes.io/healthcheck-path: /api/health
+    alb.ingress.kubernetes.io/healthcheck-protocol: HTTP
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: "15"
+    alb.ingress.kubernetes.io/healthcheck-timeout-seconds: "5"
+    alb.ingress.kubernetes.io/healthy-threshold-count: "2"
+    alb.ingress.kubernetes.io/unhealthy-threshold-count: "3"
+    alb.ingress.kubernetes.io/success-codes: "200"
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 5000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: estateflow-frontend
+  namespace: estateflow-staging
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+    alb.ingress.kubernetes.io/group.name: estateflow
+    alb.ingress.kubernetes.io/group.order: "20"
+    alb.ingress.kubernetes.io/healthcheck-path: /
+    alb.ingress.kubernetes.io/healthcheck-protocol: HTTP
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: "15"
+    alb.ingress.kubernetes.io/healthcheck-timeout-seconds: "5"
+    alb.ingress.kubernetes.io/healthy-threshold-count: "2"
+    alb.ingress.kubernetes.io/unhealthy-threshold-count: "3"
+    alb.ingress.kubernetes.io/success-codes: "200"
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 80

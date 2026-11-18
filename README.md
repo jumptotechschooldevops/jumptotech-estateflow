@@ -5,6 +5,11 @@ the JumpToTech DevOps course. It exercises a complete local development and CI p
 React/TypeScript frontend served by Nginx, a Node.js/Express API, PostgreSQL for persistence, and
 Redis for response caching — all orchestrated with Docker Compose.
 
+This README covers local Docker Compose development only. For the full AWS EKS lab — Kubernetes
+manifests, S3-backed property images, IAM/IRSA, and CI/CD deploy automation — start at
+[`docs/README.md`](docs/README.md). Infrastructure configuration lives in [`infra/`](infra/)
+(`infra/k8s/`, `infra/iam/`, `infra/s3/`).
+
 ## Architecture
 
 ```
@@ -62,11 +67,19 @@ With the default `.env` values:
 | Method | Path | Description |
 |---|---|---|
 | GET | `/api/health` | Reports `db` and `redis` connectivity |
-| GET | `/api/properties` | List all properties (cached) |
-| GET | `/api/properties/:id` | Get one property (cached) |
-| POST | `/api/properties` | Create a property (invalidates list cache) |
-| PUT | `/api/properties/:id` | Update a property (invalidates caches) |
-| DELETE | `/api/properties/:id` | Delete a property (invalidates caches) |
+| GET | `/api/properties` | List all properties (cached), each with presigned image URLs |
+| GET | `/api/properties/:id` | Get one property (cached), with presigned image URLs |
+| POST | `/api/properties` | 🔒 Create a property (invalidates list cache) |
+| PUT | `/api/properties/:id` | 🔒 Update a property (invalidates caches) |
+| DELETE | `/api/properties/:id` | 🔒 Delete a property and its images (invalidates caches) |
+| GET | `/api/properties/:id/images` | List a property's images with fresh presigned URLs |
+| POST | `/api/properties/:id/images` | 🔒 Upload an image (multipart `image` field, 5MB max, JPEG/PNG/WebP) |
+| DELETE | `/api/properties/:id/images/:imageId` | 🔒 Delete an image |
+
+🔒 = requires `Authorization: Bearer <ADMIN_API_TOKEN>` (set in `.env`; see
+[`docs/01-architecture/README.md`](docs/01-architecture/README.md)). Image uploads also
+require `S3_BUCKET_NAME` and AWS credentials to be configured — see
+[`docs/02-deployment-guides/11-s3-image-storage.md`](docs/02-deployment-guides/11-s3-image-storage.md).
 
 ## Database configuration
 
