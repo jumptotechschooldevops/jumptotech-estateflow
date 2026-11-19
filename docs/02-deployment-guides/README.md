@@ -30,7 +30,13 @@ explained) → **Expected results** → **Verify** → **Common errors** → **R
 | 13 | [Deployment verification](13-deployment-verification.md) | Confirming a deploy actually worked |
 | 14 | [Scaling and rolling updates](14-scaling-and-rolling-updates.md) | Handling load, deploying new versions safely |
 | 15 | [Rollback and recovery](15-rollback-and-recovery.md) | Undoing a bad deploy |
-| 16 | [Safe resource cleanup](16-safe-resource-cleanup.md) | Tearing down without breaking other things |
+
+| 16 | [Safe resource cleanup](16-safe-resource-cleanup.md) | Tearing down resources safely |
+| 17 | [NetworkPolicy enforcement](17-networkpolicy-enforcement.md) | Restricting pod-to-pod traffic |
+| 18 | [CI vs. CD](17-ci-vs-cd.md) | Understanding integration and deployment |
+| 19 | [GitHub OIDC authentication](18-github-oidc-authentication.md) | Secure AWS authentication |
+| 20 | [Deployment approvals](19-deployment-approvals.md) | Required reviewer approval |
+| 21 | [Troubleshooting failed AWS authentication](20-troubleshooting-aws-auth-failures.md) | Fixing AWS authentication errors |
 
 ## Progress checklist
 
@@ -50,3 +56,8 @@ explained) → **Expected results** → **Verify** → **Common errors** → **R
 - [ ] 14 Scaling and rolling updates
 - [ ] 15 Rollback and recovery
 - [ ] 16 Safe resource cleanup
+- [ ] 17 NetworkPolicy enforcement
+- [ ] 18 CI vs. CD
+- [ ] 19 GitHub OIDC authentication
+- [ ] 20 Deployment approvals
+- [ ] 21 Troubleshooting failed AWS authentication
