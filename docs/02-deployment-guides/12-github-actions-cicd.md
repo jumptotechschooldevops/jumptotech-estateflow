@@ -23,28 +23,12 @@ that was never actually built (`jumptotech-estateflow-backend:latest` vs. the re
 the local Docker daemon for Trivy to find. Both are fixed now — scanned image names match
 built ones exactly.
 
-## What `deploy.yml` does (manual dispatch only — merging to `main` never triggers it)
+## What `deploy.yml` does (push to `main` / manual dispatch)
 
 1. **`build-and-push`**: OIDC-authenticates to AWS, logs into ECR, builds+pushes both images
    tagged with the short commit SHA *and* `latest`, Trivy-scans the exact pushed tag.
 2. **`deploy`**: re-authenticates, points `kubectl` at `eks-node`, runs `kubectl set image` on
    both Deployments, waits for rollout, smoke-tests `/api/health` from inside the cluster.
-
-See [19 · Deployment approvals](19-deployment-approvals.md) for *why* this is manual-only and
-how the `staging` environment's required-reviewer gate works. See
-[17 · CI vs. CD](17-ci-vs-cd.md) if the distinction between "runs automatically" (`ci.yml`)
-and "runs only when a human says so" (`deploy.yml`) isn't clear yet.
-
-## How to trigger a deploy
-
-```bash
-gh workflow run deploy.yml --ref main -f reason="Shipping the S3 image-upload feature"
-gh run watch              # follow it live
-```
-Or via the GitHub UI: **Actions → Deploy to EKS → Run workflow**, pick the branch/tag, fill in
-the required "reason" field, click **Run workflow**. If the `staging` environment has a
-required reviewer configured, the run pauses at the `build-and-push` job until someone with
-reviewer permission approves it from the Actions tab.
 
 ## Prerequisites (one-time AWS/GitHub setup)
 
@@ -58,9 +42,6 @@ aws iam create-role --role-name estateflow-github-deploy \                      
   --assume-role-policy-document file://<your-github-oidc-trust-policy.json>
 # trust policy Principal.Federated = the OIDC provider ARN from step 1; Condition on
 # token.actions.githubusercontent.com:sub = "repo:<org>/<repo>:ref:refs/heads/main"
-# (this still works unchanged with workflow_dispatch, as long as you always dispatch against
-# the main branch — the OIDC token's sub claim is based on the ref the run is dispatched
-# against, not on which event triggered it. See docs/02-deployment-guides/18 for detail.)
 
 eksctl create iamidentitymapping \                                                       # 3
   --cluster eks-node --region us-east-1 \
@@ -75,11 +56,6 @@ Then in GitHub (Settings → Secrets and variables → Actions → **Variables**
 none of these are sensitive by themselves):
 - `AWS_DEPLOY_ROLE_ARN` = the role ARN from step 2
 - `ECR_REGISTRY` = `<account-id>.dkr.ecr.us-east-1.amazonaws.com`
-
-And set up the `staging` environment's approval gate: Settings → Environments → `staging` →
-**Required reviewers** → add at least one person. See
-[19 · Deployment approvals](19-deployment-approvals.md) for exactly what this does and doesn't
-protect against, and for the GitHub CLI equivalent if you're scripting the setup.
 
 ## Explanation of each command
 
@@ -130,7 +106,4 @@ auto-rollback; a human decides.
 - [ ] Deploy role created, scoped to this repo's `main` branch only
 - [ ] Deploy role mapped to in-cluster RBAC scoped to `estateflow-staging`
 - [ ] `AWS_DEPLOY_ROLE_ARN` and `ECR_REGISTRY` set as repository variables
-- [ ] `staging` environment has at least one required reviewer configured
-- [ ] Confirmed merging a PR into `main` does **not** start a deploy run (check the Actions tab)
-- [ ] A manual `gh workflow run deploy.yml -f reason="..."` completes successfully end to end,
-      including approving the pending run if a required reviewer is configured
+- [ ] A manual `gh workflow run deploy.yml` (or a push to `main`) completes successfully end to end

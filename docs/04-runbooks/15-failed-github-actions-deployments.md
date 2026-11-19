@@ -1,6 +1,6 @@
 # 15 · Failed GitHub Actions Deployments
 
-**Related guides:** [12 · GitHub Actions CI/CD](../02-deployment-guides/12-github-actions-cicd.md), [20 · Troubleshooting failed AWS authentication](../02-deployment-guides/20-troubleshooting-aws-auth-failures.md)
+**Related guide:** [12 · GitHub Actions CI/CD](../02-deployment-guides/12-github-actions-cicd.md)
 
 ## Symptoms
 `deploy.yml` fails, or reports success but `kubectl get deployment ... -o
@@ -39,12 +39,10 @@ failed — see [01](01-imagepullbackoff.md)/[02](02-crashloopbackoff.md)).
 
 ## Safe mitigation steps (⚠️ changes infrastructure)
 No infrastructure change belongs in this runbook itself — the fix depends entirely on which
-stage failed. Re-run after fixing the actual cause (the `reason` input is required):
+stage failed. Re-run after fixing the actual cause:
 ```bash
-gh workflow run deploy.yml --ref main -f reason="Re-run after fixing <the actual cause>"
+gh workflow run deploy.yml
 ```
-If the `staging` environment has a required reviewer configured, this pauses for approval —
-see [19 · Deployment approvals](../02-deployment-guides/19-deployment-approvals.md).
 
 ## Escalation criteria
 If repository variables/trust policy look correct and it still fails at the AWS auth step,
