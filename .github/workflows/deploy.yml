@@ -4,22 +4,12 @@
 # hardcoded: `vars.AWS_DEPLOY_ROLE_ARN` and `vars.ECR_REGISTRY` must be set as repository (or
 # environment) variables before this workflow can run — see
 # docs/02-deployment-guides/12-github-actions-cicd.md.
-#
-# Deliberately manual-only: merging to main does NOT trigger a deploy. A real engineer decides
-# when to ship, by running this workflow on purpose — see
-# docs/02-deployment-guides/19-deployment-approvals.md for why. The `staging` environment below
-# also requires a reviewer to approve the run before it's allowed to touch AWS, if the
-# repository's Settings → Environments → staging protection rule is configured with required
-# reviewers (see that same doc for the exact setup steps).
 name: Deploy to EKS
 
 on:
-  workflow_dispatch:
-    inputs:
-      reason:
-        description: "Why are you deploying right now? (shows up in the run history)"
-        required: true
-        type: string
+  workflow_dispatch: {}
+  push:
+    branches: [main]
 
 permissions:
   id-token: write
@@ -41,10 +31,6 @@ jobs:
       image-tag: ${{ steps.tag.outputs.value }}
     steps:
       - uses: actions/checkout@v4
-
-      - name: Log deployment reason
-        run: |
-          echo "Deploying because: ${{ inputs.reason }}"
 
       - name: Compute image tag
         id: tag
