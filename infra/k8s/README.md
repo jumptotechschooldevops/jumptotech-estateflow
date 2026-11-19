@@ -7,9 +7,6 @@ manifests do **not** create or modify the cluster itself — they assume it alre
 - the Amazon EBS CSI driver add-on installed, and a `gp3` `StorageClass` available (for
   `03-postgres.yaml`'s PVC) — see `docs/02-deployment-guides/06-postgresql-pvc-and-ebs.md`
 - the `metrics-server` add-on installed (for `08-hpa.yaml`)
-- (optional, see below) a NetworkPolicy-enforcing CNI, for `09-networkpolicy.yaml` to
-  actually do anything — the default AWS VPC CNI does **not** enforce NetworkPolicy without
-  extra configuration
 
 See `docs/02-deployment-guides/04-eks-and-kubernetes-basics.md` through
 `docs/02-deployment-guides/09-ingress-alb-and-target-groups.md` for the full walkthrough.
@@ -34,27 +31,6 @@ Nothing in this directory has been applied to a live cluster — review and run 
    ```
    The namespace must exist first — apply `00-namespace.yaml` (or let kustomize create it, see
    below) before running this command.
-
-## What's in this directory
-
-| File | Kind(s) | Covers |
-|---|---|---|
-| `00-namespace.yaml` | Namespace | `estateflow-staging` |
-| `01-configmap.yaml` | ConfigMap | non-secret app config |
-| `02-secrets.example.yaml` | Secret (example only) | template — see prerequisite 4 below |
-| `03-postgres.yaml` | ConfigMap, Service, StatefulSet | database + migration init scripts |
-| `04-redis.yaml` | Service, Deployment | cache |
-| `05-backend.yaml` | ServiceAccount, Service, Deployment | API, IRSA-annotated for S3 access |
-| `06-frontend.yaml` | Service, Deployment | static UI |
-| `07-ingress.yaml` | Ingress ×2 | public ALB routing |
-| `08-hpa.yaml` | HorizontalPodAutoscaler ×2 | autoscaling for backend/frontend |
-| `09-networkpolicy.yaml` | NetworkPolicy ×6 | least-privilege pod-to-pod traffic — see the file's own header note on CNI enforcement, and `docs/02-deployment-guides/17-networkpolicy-enforcement.md` for the full guide |
-
-**S3 permissions** are intentionally *not* a file in this directory — the backend's
-permission to call S3 is granted via the IRSA role ARN annotated on the ServiceAccount in
-`05-backend.yaml`, with the actual least-privilege IAM policy JSON living in
-`infra/iam/backend-s3-policy.json` (IAM policies aren't Kubernetes objects, so they don't
-belong in `infra/k8s/`). See `infra/iam/README.md`.
 
 ## Apply (requires your own explicit `kubectl apply` run — not executed for you)
 

@@ -1,15 +1,12 @@
 # 17 · NetworkPolicy Blocking Traffic
 
-**Related guides:** [05 · Kubernetes Deployments and Services](../02-deployment-guides/05-kubernetes-deployments-and-services.md), [17 · NetworkPolicy enforcement](../02-deployment-guides/17-networkpolicy-enforcement.md)
+**Related guide:** [05 · Kubernetes Deployments and Services](../02-deployment-guides/05-kubernetes-deployments-and-services.md)
 
-> **Note on current state:** `infra/k8s/09-networkpolicy.yaml` defines 6 `NetworkPolicy`
-> objects (default-deny baseline, DNS egress, ALB ingress to frontend/backend, backend-only
-> access to Postgres/Redis). **Whether they actually restrict anything depends on your
-> cluster's CNI** — the default AWS VPC CNI does not enforce NetworkPolicy without extra
-> configuration. See
-> [02-deployment-guides/17](../02-deployment-guides/17-networkpolicy-enforcement.md) for how
-> to check. Don't assume traffic is actually being restricted just because the objects exist
-> and `kubectl get networkpolicy` shows them.
+> **Note on current state:** `infra/k8s/` does **not** currently define any `NetworkPolicy`
+> objects — by default, Kubernetes allows all pod-to-pod traffic within the cluster unless a
+> `NetworkPolicy` restricts it. This runbook applies if/when one is introduced (a reasonable
+> future hardening step: restricting the frontend from talking directly to Postgres, for
+> example) — don't assume a NetworkPolicy exists today just because this runbook exists.
 
 ## Symptoms
 A pod that should be able to reach another pod/Service times out or gets connection refused,
