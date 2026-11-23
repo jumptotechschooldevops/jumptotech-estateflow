@@ -42,7 +42,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: backend
-          image: <ECR_REGISTRY>/estateflow-backend:latest
+          image: 668484272259.dkr.ecr.us-east-2.amazonaws.com/real-estate-backend:latest
           imagePullPolicy: IfNotPresent
           securityContext:
             runAsNonRoot: true
