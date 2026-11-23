@@ -112,12 +112,12 @@ spec:
               memory: 512Mi
           readinessProbe:
             exec:
-              command: ["pg_isready", "-U", "$(POSTGRES_USER)"]
+              command: ["/bin/sh", "-c", "pg_isready -h 127.0.0.1 -U \"$POSTGRES_USER\""]
             initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
             exec:
-              command: ["pg_isready", "-U", "$(POSTGRES_USER)"]
+              command: ["/bin/sh", "-c", "pg_isready -h 127.0.0.1 -U \"$POSTGRES_USER\""]
             initialDelaySeconds: 15
             periodSeconds: 20
       volumes:
@@ -129,7 +129,7 @@ spec:
         name: data
       spec:
         accessModes: ["ReadWriteOnce"]
-        storageClassName: gp3
+        storageClassName: gp3-standard
         resources:
           requests:
             storage: 10Gi
