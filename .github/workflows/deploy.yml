@@ -1,20 +1,15 @@
+# Builds and pushes the backend/frontend images to ECR, then rolls out the new tag on the
+# existing `eks-node` cluster (namespace `estateflow-staging`). Authenticates to AWS via GitHub
+# OIDC — no long-lived AWS credentials are stored in this repo. No AWS account ID or ARN is
+# hardcoded: `vars.AWS_DEPLOY_ROLE_ARN` and `vars.ECR_REGISTRY` must be set as repository (or
+# environment) variables before this workflow can run — see
+# docs/02-deployment-guides/12-github-actions-cicd.md.
 name: Deploy to EKS
 
 on:
-  workflow_dispatch:
-    inputs:
-      reason:
-        description: "Reason for deployment"
-        required: true
-        type: string
-      mode:
-        description: "Execution mode"
-        required: true
-        default: validate-only
-        type: choice
-        options:
-          - validate-only
-          - deploy
+  workflow_dispatch: {}
+  push:
+    branches: [main]
 
 permissions:
   id-token: write
@@ -44,13 +39,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Log deployment request
-        env:
-          DEPLOY_REASON: ${{ inputs.reason }}
-          DEPLOY_MODE: ${{ inputs.mode }}
-        run: |
-          printf 'Reason: %s\n' "$DEPLOY_REASON"
-          printf 'Mode: %s\n' "$DEPLOY_MODE"
+      - name: Compute image tag
+        id: tag
+        run: echo "value=${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
 
       - name: Configure AWS credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v4

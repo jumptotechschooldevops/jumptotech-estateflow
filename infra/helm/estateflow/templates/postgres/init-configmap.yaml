@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: estateflow-db-init
+  namespace: {{ .Release.Namespace }}
+data:
+  001_init.sql: |
+    CREATE TABLE IF NOT EXISTS properties (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        price NUMERIC(12, 2) NOT NULL,
+        address VARCHAR(255),
+        bedrooms SMALLINT,
+        bathrooms SMALLINT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+
+    INSERT INTO properties (title, description, price, address, bedrooms, bathrooms)
+    VALUES
+        ('Downtown Loft', 'Bright open-plan loft near the city center.', 325000, '12 Market St', 2, 1),
+        ('Suburban Family Home', 'Spacious 4-bed house with a large backyard.', 450000, '48 Maple Ave', 4, 3),
+        ('Lakeside Cottage', 'Cozy cottage with private lake access.', 275000, '7 Lake Shore Rd', 2, 2)
+    ON CONFLICT DO NOTHING;
+
+  002_add_property_images.sql: |
+    CREATE TABLE IF NOT EXISTS property_images (
+        id SERIAL PRIMARY KEY,
+        property_id INTEGER NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
+        object_key VARCHAR(512) NOT NULL UNIQUE,
+        content_type VARCHAR(100) NOT NULL,
+        size_bytes INTEGER NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_property_images_property_id ON property_images(property_id);

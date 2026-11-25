@@ -1,0 +1,110 @@
+serviceAccount:
+  name: estateflow-backend
+
+aws:
+  region: us-east-2
+  s3:
+    bucketName: estateflow-bucket
+
+config:
+  port: "5000"
+  pgHost: postgres
+  pgPort: "5432"
+  pgDatabase: estateflow
+  redisUrl: redis://redis:6379
+
+backend:
+  replicaCount: 2
+
+  image:
+    repository: 668484272259.dkr.ecr.us-east-2.amazonaws.com/real-estate-backend
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  service:
+    type: ClusterIP
+    port: 5000
+    targetPort: 5000
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+  probes:
+    path: /api/health
+    readiness:
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    liveness:
+      initialDelaySeconds: 15
+      periodSeconds: 20
+
+  existingSecret: estateflow-secrets
+
+frontend:
+  replicaCount: 2
+
+  image:
+    repository: 668484272259.dkr.ecr.us-east-2.amazonaws.com/real-estate-frontend
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 8080
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 250m
+      memory: 128Mi
+
+  probes:
+    path: /
+    readiness:
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    liveness:
+      initialDelaySeconds: 10
+      periodSeconds: 20
+
+postgres:
+  replicaCount: 1
+
+  image:
+    repository: postgres
+    tag: 16-alpine
+
+  service:
+    port: 5432
+    targetPort: 5432
+
+  persistence:
+    storageClass: gp3-standard
+    accessMode: ReadWriteOnce
+    size: 10Gi
+
+  existingSecret: estateflow-secrets
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  probes:
+    readiness:
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    liveness:
+      initialDelaySeconds: 15
+      periodSeconds: 20
