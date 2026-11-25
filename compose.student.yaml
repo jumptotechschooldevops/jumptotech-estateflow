@@ -1,0 +1,22 @@
+services:
+  db:
+    ports: !override
+      - "127.0.0.1:5435:5432"
+
+  cache:
+    ports: !override
+      - "127.0.0.1:6381:6379"
+
+  backend:
+    ports: !override
+      - "127.0.0.1:5005:5000"
+    environment:
+      ENABLE_SWAGGER: "true"
+      AWS_ACCESS_KEY_ID: ""
+      AWS_SECRET_ACCESS_KEY: ""
+      AWS_SESSION_TOKEN: ""
+      S3_BUCKET_NAME: ""
+
+  frontend:
+    ports: !override
+      - "127.0.0.1:8085:8080"
