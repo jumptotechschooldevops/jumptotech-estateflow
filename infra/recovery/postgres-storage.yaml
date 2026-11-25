@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: estateflow-postgres-auto-pv
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: gp3-auto-retain
+  claimRef:
+    namespace: estateflow-staging
+    name: postgres-auto-data
+  csi:
+    driver: ebs.csi.eks.amazonaws.com
+    volumeHandle: vol-02c629b5be50380ff
+    fsType: ext4
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: topology.kubernetes.io/zone
+              operator: In
+              values:
+                - us-east-2c
+            - key: eks.amazonaws.com/compute-type
+              operator: In
+              values:
+                - auto
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-auto-data
+  namespace: estateflow-staging
+spec:
+  accessModes:
+    - ReadWriteOnce
+  volumeMode: Filesystem
+  storageClassName: gp3-auto-retain
+  volumeName: estateflow-postgres-auto-pv
+  resources:
+    requests:
+      storage: 10Gi
