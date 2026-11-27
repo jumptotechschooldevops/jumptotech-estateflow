@@ -12,25 +12,14 @@
     }
   ],
   "tags": [
-    {
-      "name": "Health",
-      "description": "Application and dependency health checks"
-    },
-    {
-      "name": "Properties",
-      "description": "Create, retrieve, update and delete real estate properties"
-    },
-    {
-      "name": "Images",
-      "description": "Manage property images stored in AWS S3"
-    }
+    {"name": "Health"},
+    {"name": "Properties"},
+    {"name": "Images"}
   ],
   "paths": {
     "/api/health": {
       "get": {
-        "tags": [
-          "Health"
-        ],
+        "tags": ["Health"],
         "summary": "Check application health",
         "description": "Checks PostgreSQL and Redis connectivity.",
         "responses": {
@@ -58,16 +47,12 @@
               }
             }
           }
-        },
-        "operationId": "checkHealth",
-        "security": []
+        }
       }
     },
     "/api/properties": {
       "get": {
-        "tags": [
-          "Properties"
-        ],
+        "tags": ["Properties"],
         "summary": "List all properties",
         "description": "Property data is cached in Redis for 30 seconds. Image metadata and presigned URLs are retrieved separately.",
         "responses": {
@@ -89,23 +74,13 @@
               }
             }
           },
-          "500": {
-            "description": "Internal server error"
-          }
-        },
-        "operationId": "listProperties",
-        "security": []
+          "500": {"description": "Internal server error"}
+        }
       },
       "post": {
-        "tags": [
-          "Properties"
-        ],
+        "tags": ["Properties"],
         "summary": "Create a property",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
+        "security": [{"bearerAuth": []}],
         "requestBody": {
           "$ref": "#/components/requestBodies/PropertyBody"
         },
@@ -113,29 +88,18 @@
           "201": {
             "$ref": "#/components/responses/PropertyCreated"
           },
-          "400": {
-            "description": "Invalid property payload"
-          },
-          "401": {
-            "description": "Missing or invalid admin token"
-          },
-          "500": {
-            "description": "Internal server error"
-          }
-        },
-        "operationId": "createProperty"
+          "400": {"description": "Invalid property payload"},
+          "401": {"description": "Missing or invalid admin token"},
+          "500": {"description": "Internal server error"}
+        }
       }
     },
     "/api/properties/{id}": {
       "parameters": [
-        {
-          "$ref": "#/components/parameters/PropertyId"
-        }
+        {"$ref": "#/components/parameters/PropertyId"}
       ],
       "get": {
-        "tags": [
-          "Properties"
-        ],
+        "tags": ["Properties"],
         "summary": "Get property by ID",
         "description": "Property data is cached for 60 seconds.",
         "responses": {
@@ -154,27 +118,15 @@
               }
             }
           },
-          "404": {
-            "description": "Property not found"
-          },
-          "500": {
-            "description": "Internal server error"
-          }
-        },
-        "operationId": "getProperty",
-        "security": []
+          "404": {"description": "Property not found"},
+          "500": {"description": "Internal server error"}
+        }
       },
       "put": {
-        "tags": [
-          "Properties"
-        ],
+        "tags": ["Properties"],
         "summary": "Update a property",
         "description": "Updates property data and invalidates Redis cache keys.",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
+        "security": [{"bearerAuth": []}],
         "requestBody": {
           "$ref": "#/components/requestBodies/PropertyBody"
         },
@@ -189,59 +141,31 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid property payload"
-          },
-          "401": {
-            "description": "Missing or invalid admin token"
-          },
-          "404": {
-            "description": "Property not found"
-          },
-          "500": {
-            "description": "Internal server error"
-          }
-        },
-        "operationId": "updateProperty"
+          "400": {"description": "Invalid property payload"},
+          "401": {"description": "Missing or invalid admin token"},
+          "404": {"description": "Property not found"},
+          "500": {"description": "Internal server error"}
+        }
       },
       "delete": {
-        "tags": [
-          "Properties"
-        ],
+        "tags": ["Properties"],
         "summary": "Delete a property",
         "description": "Deletes property data, associated image records and S3 objects, and invalidates the cache.",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
+        "security": [{"bearerAuth": []}],
         "responses": {
-          "204": {
-            "description": "Property deleted"
-          },
-          "401": {
-            "description": "Missing or invalid admin token"
-          },
-          "404": {
-            "description": "Property not found"
-          },
-          "500": {
-            "description": "Internal server error"
-          }
-        },
-        "operationId": "deleteProperty"
+          "204": {"description": "Property deleted"},
+          "401": {"description": "Missing or invalid admin token"},
+          "404": {"description": "Property not found"},
+          "500": {"description": "Internal server error"}
+        }
       }
     },
     "/api/properties/{id}/images": {
       "parameters": [
-        {
-          "$ref": "#/components/parameters/PropertyId"
-        }
+        {"$ref": "#/components/parameters/PropertyId"}
       ],
       "get": {
-        "tags": [
-          "Images"
-        ],
+        "tags": ["Images"],
         "summary": "List property images",
         "description": "Returns image metadata with fresh S3 presigned URLs.",
         "responses": {
@@ -258,36 +182,22 @@
               }
             }
           },
-          "404": {
-            "description": "Property not found"
-          },
-          "500": {
-            "description": "Internal server error"
-          }
-        },
-        "operationId": "listPropertyImages",
-        "security": []
+          "404": {"description": "Property not found"},
+          "500": {"description": "Internal server error"}
+        }
       },
       "post": {
-        "tags": [
-          "Images"
-        ],
+        "tags": ["Images"],
         "summary": "Upload a property image",
         "description": "Uploads an image to S3 and stores metadata in PostgreSQL. Maximum size: 5 MiB. Allowed formats: JPEG, PNG and WebP.",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
+        "security": [{"bearerAuth": []}],
         "requestBody": {
           "required": true,
           "content": {
             "multipart/form-data": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "image"
-                ],
+                "required": ["image"],
                 "properties": {
                   "image": {
                     "type": "string",
@@ -309,61 +219,33 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid or missing image"
-          },
-          "401": {
-            "description": "Missing or invalid admin token"
-          },
-          "404": {
-            "description": "Property not found"
-          },
-          "500": {
-            "description": "Internal server error"
-          }
-        },
-        "operationId": "uploadPropertyImage"
+          "400": {"description": "Invalid or missing image"},
+          "401": {"description": "Missing or invalid admin token"},
+          "404": {"description": "Property not found"},
+          "500": {"description": "Internal server error"}
+        }
       }
     },
     "/api/properties/{id}/images/{imageId}": {
       "parameters": [
-        {
-          "$ref": "#/components/parameters/PropertyId"
-        },
+        {"$ref": "#/components/parameters/PropertyId"},
         {
           "name": "imageId",
           "in": "path",
           "required": true,
-          "schema": {
-            "type": "integer"
-          }
+          "schema": {"type": "integer"}
         }
       ],
       "delete": {
-        "tags": [
-          "Images"
-        ],
+        "tags": ["Images"],
         "summary": "Delete a property image",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
+        "security": [{"bearerAuth": []}],
         "responses": {
-          "204": {
-            "description": "Image deleted"
-          },
-          "401": {
-            "description": "Missing or invalid admin token"
-          },
-          "404": {
-            "description": "Image not found"
-          },
-          "500": {
-            "description": "Internal server error"
-          }
-        },
-        "operationId": "deletePropertyImage"
+          "204": {"description": "Image deleted"},
+          "401": {"description": "Missing or invalid admin token"},
+          "404": {"description": "Image not found"},
+          "500": {"description": "Internal server error"}
+        }
       }
     }
   },
@@ -380,9 +262,7 @@
         "name": "id",
         "in": "path",
         "required": true,
-        "schema": {
-          "type": "integer"
-        },
+        "schema": {"type": "integer"},
         "example": 1
       }
     },
@@ -391,10 +271,7 @@
         "description": "Whether property data was retrieved from Redis",
         "schema": {
           "type": "string",
-          "enum": [
-            "HIT",
-            "MISS"
-          ]
+          "enum": ["HIT", "MISS"]
         }
       }
     },
@@ -425,10 +302,7 @@
     "schemas": {
       "PropertyInput": {
         "type": "object",
-        "required": [
-          "title",
-          "price"
-        ],
+        "required": ["title", "price"],
         "properties": {
           "title": {
             "type": "string",
@@ -465,13 +339,8 @@
       "Property": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "integer",
-            "example": 1
-          },
-          "title": {
-            "type": "string"
-          },
+          "id": {"type": "integer", "example": 1},
+          "title": {"type": "string"},
           "description": {
             "type": "string",
             "nullable": true
@@ -500,9 +369,7 @@
       },
       "PropertyWithImages": {
         "allOf": [
-          {
-            "$ref": "#/components/schemas/Property"
-          },
+          {"$ref": "#/components/schemas/Property"},
           {
             "type": "object",
             "properties": {
@@ -519,13 +386,8 @@
       "PropertyImage": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "integer"
-          },
-          "url": {
-            "type": "string",
-            "format": "uri"
-          },
+          "id": {"type": "integer"},
+          "url": {"type": "string", "format": "uri"},
           "contentType": {
             "type": "string",
             "example": "image/jpeg"
